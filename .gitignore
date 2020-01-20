@@ -1,0 +1,5 @@
+*
+!*.cpp
+!input.txt
+!Makefile
+!.gitignore
