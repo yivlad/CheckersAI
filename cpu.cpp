@@ -3,9 +3,6 @@
 
 #include <iostream>
 #include <fstream>
-#include <vector>
-#include <algorithm>
-using namespace std;
 
 class Position{
     private:
@@ -23,8 +20,7 @@ class Position{
             }
             move = move == 'W' ? 'B' : 'W';
         }
-        vector<Position> getPossibleJumps(int i, int j, int prevDirection){
-            vector<Position> res;
+        void getPossibleJumps(int i, int j, int prevDirection, Position* p, int* n){
             char rival = move == 'W' ? 'B' : 'W';
             char king = move == 'W' ? WHITE_KING : BLACK_KING;
             char rivalking = king == WHITE_KING ? BLACK_KING : WHITE_KING;
@@ -43,13 +39,12 @@ class Position{
                             branch.board[i][j] = '#';
                             branch.board[i + 2 * stepi][j + 2 * stepj] = move;
                             branch.board[i + stepi][j + stepj] = 'T';
-                            auto v = branch.getPossibleJumps(i + 2 * stepi, j + 2 * stepj, direction);
-                            if(v.size() == 0){
+                            int currentN = *n;
+                            branch.getPossibleJumps(i + 2 * stepi, j + 2 * stepj, direction, p, n);
+                            if(currentN == *n){
                                 branch.endMove();
-                                res.push_back(branch);
-                            }
-                            else{
-                                res.insert(res.end(), v.begin(), v.end());
+                                p[*n] = branch;
+                                (*n)++;
                             }
                         }
                     }
@@ -78,20 +73,18 @@ class Position{
                         branch.board[i][j] = '#';
                         branch.board[ki][kj] = king;
                         branch.board[ri][rj] = 'T';
-                        auto v = branch.getPossibleJumps(ki, kj, direction);
-                        if(v.size() == 0){
+                        int currentN = *n;
+                        branch.getPossibleJumps(i + 2 * stepi, j + 2 * stepj, direction, p, n);
+                        if(currentN == *n){
                             branch.endMove();
-                            res.push_back(branch);
-                        }
-                        else{
-                            res.insert(res.end(), v.begin(), v.end());
+                            p[*n] = branch;
+                            (*n)++;
                         }
                         ki += stepi;
                         kj += stepj;
                     }
                 }
             }
-            return res;
         }
         bool hasPossibleJumps(int i, int j){
             char rival = move == 'W' ? 'B' : 'W';
@@ -136,8 +129,7 @@ class Position{
             }
             return false;
         }
-        vector<Position> getPossibleMoves(){
-            vector<Position> res;
+        void getPossibleMoves(Position* p, int* n){
             int direction = move == 'W' ? -1: 1;
             for(int i = 0; i < 8; i++){
                 for(int j = 0; j < 8; j++){
@@ -148,14 +140,16 @@ class Position{
                                 branch.board[i][j] = '#';
                                 branch.board[i + direction][j - 1] = move;
                                 branch.endMove();
-                                res.push_back(branch);
+                                p[*n] = branch;
+                                (*n)++;
                             }
                             if(j + 1 < 8 && board[i + direction][j + 1] == '#'){
                                 Position branch = *this;
                                 branch.board[i][j] = '#';
                                 branch.board[i + direction][j + 1] = move;
                                 branch.endMove();
-                                res.push_back(branch);
+                                p[*n] = branch;
+                                (*n)++;
                             }
                         }
                     }
@@ -174,7 +168,8 @@ class Position{
                                 branch.board[i][j] = '#';
                                 branch.board[x][y] = king;
                                 branch.endMove();
-                                res.push_back(branch);
+                                p[*n] = branch;
+                                (*n)++;
                                 x += stepi;
                                 y += stepj;
                             }
@@ -182,7 +177,6 @@ class Position{
                     }
                 }
             }
-            return res;
         }
         bool hasPossibleMoves(){
             int direction = move == 'W' ? -1: 1;
@@ -217,15 +211,12 @@ class Position{
             }
             return false;
         }
-        vector<Position> getPossibleJumps(){
-            vector<Position> res;
+        void getPossibleJumps(Position* p, int* n){
             for(int i = 0; i < 8; i++){
                 for(int j = 0; j < 8; j++){
-                    auto v = getPossibleJumps(i, j, -1);
-                    res.insert(res.end(), v.begin(), v.end());
+                    getPossibleJumps(i, j, -1, p, n);
                 }
             }
-            return res;
         }
     public:
         Position(char board[8][8], char move){
@@ -248,11 +239,10 @@ class Position{
             if(move == 'B') return true;
             return false;
         }
-        vector<Position> getPossiblePositions(){
-            auto v = this->getPossibleJumps();
-            if(v.size() != 0) return v;
-            v = this->getPossibleMoves();
-            return v;
+        void getPossiblePositions(Position* p, int* n){
+            this->getPossibleJumps(p, n);
+            if(*n != 0) return;
+            this->getPossibleMoves(p, n);
         }
         bool hasPossiblePositions(){
             for(int i = 0; i < 8; i++){
@@ -312,13 +302,13 @@ class Position{
             }
             return balance;
         }
-        friend ostream& operator<<(ostream& out, const Position& p){
-            out << p.move << endl;
+        friend std::ostream& operator<<(std::ostream& out, const Position& p){
+            out << p.move << std::endl;
             for(int i = 0; i < 8; i++){
                 for(int j = 0; j < 8; j++){
                     out << p.board[i][j];
                 }
-                out << endl;
+                out << std::endl;
             }
             return out;
         }
@@ -327,24 +317,27 @@ class Position{
 double minimax(Position pos, int depth){
     double heuristic = pos.evaluate();
     if(heuristic == 100 || heuristic == -100 || depth == 0) return heuristic;
-    auto v = pos.getPossiblePositions();
+    Position* p = (Position*) malloc(50 * sizeof(Position));
+    int n = 0;
+    pos.getPossiblePositions(p, &n);
     double cur;
     if(pos.min()) cur = 200;
     else cur = -200;
-    for(unsigned long i = 0; i < v.size(); i++){
-        double e = minimax(v[i], depth - 1);
+    for(int i = 0; i < n; i++){
+        double e = minimax(p[i], depth - 1);
         if(pos.min()){
             if(e < cur) cur = e;
         }else{
             if(e > cur) cur = e;
         }
     }
+    free(p);
     return cur;
 }
 
 int main()
 {
-    ifstream input;
+    std::ifstream input;
     input.open("input.txt");
     char board[8][8];
     char move;
@@ -360,20 +353,22 @@ int main()
     Position pos(board, move);
     double heuristic = pos.evaluate();
     if(heuristic == 100){
-        cout << "White wins!" << endl;
+        std::cout << "White wins!" << std::endl;
         return EXIT_SUCCESS;
     }
     if(heuristic == -100){
-        cout << "Black wins!" << endl;
+        std::cout << "Black wins!" << std::endl;
         return EXIT_SUCCESS;
     }
-    auto v = pos.getPossiblePositions();
+    Position* p = (Position*) malloc(50 * sizeof(Position));
+    int n = 0;
+    pos.getPossiblePositions(p, &n);
     int index = -1;
     double cur;
     if(pos.min()) cur = 200;
     else cur = -200;
-    for(unsigned long i = 0; i < v.size(); i++){
-        double e = minimax(v[i], 6);
+    for(int i = 0; i < n; i++){
+        double e = minimax(p[i], 6);
         if(pos.min()){
             if(e < cur) {
                 cur = e;
@@ -386,9 +381,11 @@ int main()
             }
         }
     }
-    Position best = v[index];
-    ofstream output;
+    Position best = p[index];
+    std::ofstream output;
     output.open("output.txt");
-    output << best << endl;
+    output << best << std::endl;
+    output.close();
+    free(p);
     return EXIT_SUCCESS;
 }
