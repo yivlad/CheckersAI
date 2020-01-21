@@ -1,6 +1,6 @@
 #define WHITE_KING 'K'
 #define BLACK_KING 'Q'
-#define CPU_depth 2
+#define CPU_depth 3
 #define GPU_depth 2
 
 #include <iostream>
@@ -414,8 +414,8 @@ public:
         if(root->pos.min()){
             double min = 200;
             for(int i = 0; i < root->next.size(); i++){
-                if(root->estimate < min){
-                    min = root->estimate;
+                if(root->next[i]->estimate < min){
+                    min = root->next[i]->estimate;
                     index = i;
                 }
             }
@@ -424,8 +424,8 @@ public:
         {
             double max = -200;
             for(int i = 0; i < root->next.size(); i++){
-                if(root->estimate > max){
-                    max = root->estimate;
+                if(root->next[i]->estimate > max){
+                    max = root->next[i]->estimate;
                     index = i;
                 }
             }
@@ -497,6 +497,8 @@ int main(){
     gametree.leavestoarray(p);
     Position* d_p;
     double* d_e;
+    checkCudaErrors(cudaDeviceSetLimit(cudaLimitStackSize, 1024 * 4));
+    checkCudaErrors(cudaDeviceSetLimit(cudaLimitMallocHeapSize, 1024 * 64));
     checkCudaErrors(cudaMalloc((void**)&d_p, sizeof(Position) * l));
     checkCudaErrors(cudaMalloc((void**)&d_e, sizeof(double) * l));
     checkCudaErrors(cudaMemcpy(d_p, p, sizeof(Position) * l, cudaMemcpyHostToDevice));
