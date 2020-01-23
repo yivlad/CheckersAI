@@ -1,7 +1,7 @@
 #define WHITE_KING 'K'
 #define BLACK_KING 'Q'
 #define CPU_depth 3
-#define GPU_depth 2
+#define GPU_depth 3
 
 #include <iostream>
 #include <fstream>
@@ -246,6 +246,7 @@ public:
         return false;
     }
     __device__ __host__ void getPossiblePositions(Position* p, int* n){
+        *n = 0;
         this->getPossibleJumps(p, n);
         if(*n != 0) return;
         this->getPossibleMoves(p, n);
