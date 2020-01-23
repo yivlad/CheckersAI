@@ -437,31 +437,87 @@ public:
     }
 };
 
-__device__ double minimax(Position pos, int depth){
-    double heuristic = pos.evaluate();
-    if(heuristic == 100 || heuristic == -100 || depth == 0) return heuristic;
-    Position* p = (Position*) malloc(50 * sizeof(Position));
-    int n = 0;
-    pos.getPossiblePositions(p, &n);
-    double cur;
-    if(pos.min()) cur = 200;
-    else cur = -200;
-    for(int i = 0; i < n; i++){
-        double e = minimax(p[i], depth - 1);
-        if(pos.min()){
-            if(e < cur) cur = e;
+class MinimaxStackNode {
+public:
+    int max, cur;
+    double* estimates;
+    Position* positions;
+    __device__ MinimaxStackNode() {
+        positions = (Position*) malloc(50 * sizeof(Position));
+        estimates = (double*) malloc(50 * sizeof(double));
+    }
+    __device__ ~MinimaxStackNode(){
+        free(positions);
+        free(estimates);
+    }
+};
+
+__device__ double minimax(Position* pos){
+    MinimaxStackNode stack[GPU_depth];
+    pos->getPossiblePositions(stack[0].positions, &stack[0].max);
+    stack[0].cur = 0;
+    int current_node = 0;
+    while(current_node >= 0){
+        if(stack[current_node].cur < stack[current_node].max){
+            int i = stack[current_node].cur;
+            double heuristic = stack[current_node].positions[i].evaluate();
+            if(current_node < GPU_depth - 1 && heuristic != 100 && heuristic != -100){
+                stack[current_node].positions[i].getPossiblePositions(stack[current_node + 1].positions, &stack[current_node + 1].max);
+                stack[current_node + 1].cur = 0;
+                current_node++;
+            }
+            else{
+                stack[current_node].estimates[i] = heuristic;
+                stack[current_node].cur++;
+            }
         }else{
-            if(e > cur) cur = e;
+            current_node--;
+            if(current_node < 0) break;
+            if(stack[current_node].positions[stack[current_node].cur].min()){
+                double min = 200;
+                for(int i = 0; i < stack[current_node + 1].max; i++){
+                    if(stack[current_node + 1].estimates[i] < min){
+                        min = stack[current_node + 1].estimates[i];
+                    }
+                }
+                stack[current_node].estimates[stack[current_node].cur] = min;
+            }
+            else{
+                double max = -200;
+                for(int i = 0; i < stack[current_node + 1].max; i++){
+                    if(stack[current_node + 1].estimates[i] > max){
+                        max = stack[current_node + 1].estimates[i];
+                    }
+                }
+                stack[current_node].estimates[stack[current_node].cur] = max;
+            }
+            stack[current_node].cur++;
         }
     }
-    free(p);
-    return cur;
+    if(pos->min()){
+        double min = 200;
+        for(int i = 0; i < stack[0].max; i++){
+            if(stack[0].estimates[i] < min){
+                min = stack[0].estimates[i];
+            }
+        }
+        return min;
+    }
+    else{
+        double max = -200;
+        for(int i = 0; i < stack[0].max; i++){
+            if(stack[0].estimates[i] > max){
+                max = stack[0].estimates[i];
+            }
+        }
+        return max;
+    }
 }
 
 __global__ void checkers_kernel(Position* d_p, double* d_e, int n){
     int index = blockIdx.x * blockDim.x + threadIdx.x;
     if(index < n){
-        d_e[index] = minimax(d_p[index], GPU_depth);
+        d_e[index] = minimax(d_p + index);
     }
 }
 
