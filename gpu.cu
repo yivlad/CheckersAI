@@ -1,7 +1,7 @@
 #define WHITE_KING 'K'
 #define BLACK_KING 'Q'
 #define CPU_depth 3
-#define GPU_depth 2
+#define GPU_depth 3
 
 #include <iostream>
 #include <fstream>
