@@ -1,6 +1,6 @@
 #define WHITE_KING 'K'
 #define BLACK_KING 'Q'
-#define CPU_depth 3
+#define CPU_depth 4
 #define GPU_depth 3
 
 #include <iostream>
@@ -498,7 +498,7 @@ int main(){
     Position* d_p;
     double* d_e;
     checkCudaErrors(cudaDeviceSetLimit(cudaLimitStackSize, 1024 * 4));
-    checkCudaErrors(cudaDeviceSetLimit(cudaLimitMallocHeapSize, 1024 * 64));
+    checkCudaErrors(cudaDeviceSetLimit(cudaLimitMallocHeapSize, 1024 * 1024 * 512));
     checkCudaErrors(cudaMalloc((void**)&d_p, sizeof(Position) * l));
     checkCudaErrors(cudaMalloc((void**)&d_e, sizeof(double) * l));
     checkCudaErrors(cudaMemcpy(d_p, p, sizeof(Position) * l, cudaMemcpyHostToDevice));
