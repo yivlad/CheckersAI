@@ -6,14 +6,14 @@ This project consists of two parts: CPU and GPU via CUDA framework CheckersAI.
 
 Running Makefile will produce two output executable files - "cpu" and "gpu". Both of them use "input.txt" file to get input. Example of "input.txt" is provided in project folder. Input should be a valid checkers position, such as:\n\n
 W\n\n
-\#B#B#B#B\n\n
-B#B#B#B#\n\n
-\#B#B#B#B\n\n
-\########\n\n
-\########\n\n
-W#W#W#W#\n\n
-\#W#W#W#W\n\n
-W#W#W#W#\n\n
+\#B#B#B#B\
+B#B#B#B#\
+\#B#B#B#B\
+\########\
+\########\
+W#W#W#W#\
+\#W#W#W#W\
+W#W#W#W#\
 \- a valid start position. First letter denotes whose turn it is - W for white and B for black. Empty cells are marked by #(hashtag), white pieces - W, black pieces - B, white king - K, black king - Q.
 Both "cpu" and "gpu" executables produce "output.txt" as an output, where the best found move will be presented in form of position after this move.
 
