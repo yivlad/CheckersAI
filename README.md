@@ -4,8 +4,8 @@ This project consists of two parts: CPU and GPU via CUDA framework CheckersAI.
 
 ## Getting started
 
-Running Makefile will produce two output executable files - "cpu" and "gpu". Both of them use "input.txt" file to get input. Example of "input.txt" is provided in project folder. Input should be a valid checkers position, such as:\n\n
-W\n\n
+Running Makefile will produce two output executable files - "cpu" and "gpu". Both of them use "input.txt" file to get input. Example of "input.txt" is provided in project folder. Input should be a valid checkers position, such as:\
+W\
 \#B#B#B#B\
 B#B#B#B#\
 \#B#B#B#B\
